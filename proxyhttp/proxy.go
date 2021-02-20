@@ -2,6 +2,7 @@ package proxyhttp
 
 import (
 	_ "fmt"
+	"io"
 	"net"
 	"strings"
 )
@@ -54,37 +55,15 @@ func (h *HTTPProxy) forward(conn net.Conn) {
 	}
 
 	go func() {
-		tmpBufcln := make([]byte, 4096)
+
 		for {
-			tmpLen, err := conn.Read(tmpBufcln)
-			if err != nil {
-				conn.Close()
-				serconn.Close()
-				break
-			}
-			_, err = serconn.Write(tmpBufcln[:tmpLen])
-			if err != nil {
-				conn.Close()
-				serconn.Close()
-				break
-			}
+			io.Copy(serconn, conn)
 		}
 	}()
 	go func() {
-		tmpBufser := make([]byte, 4096)
+
 		for {
-			tmpLen, err := serconn.Read(tmpBufser)
-			if err != nil {
-				conn.Close()
-				serconn.Close()
-				break
-			}
-			_, err = conn.Write(tmpBufser[:tmpLen])
-			if err != nil {
-				conn.Close()
-				serconn.Close()
-				break
-			}
+			io.Copy(conn, serconn)
 		}
 	}()
 }
